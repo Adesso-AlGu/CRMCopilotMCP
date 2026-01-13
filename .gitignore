@@ -19,7 +19,7 @@ _ReSharper.*
 # Azure and sensitive configuration
 appsettings.Development.json
 appsettings.*.json
-!appsettings.json
+!appsettings.template.json
 src/McpServer.Opportunity/appsettings.json
 src/McpServer.Lead/appsettings.json
 src/McpServer.Quote/appsettings.json

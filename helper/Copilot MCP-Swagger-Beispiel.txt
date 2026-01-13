@@ -1,0 +1,30 @@
+swagger: '2.0'
+info:
+  title: mcp-context-003-msap
+  description: Kontextsensitive MCP-Tools für Lead-, Opportunity- und Angebotsprozesse in Dynamics 365 Sales.
+  version: 1.0.0
+host: app-mcp-context-003-msap.azurewebsites.net
+basePath: /
+schemes:
+  - https
+paths:
+  /mcp:
+    post:
+      responses:
+        '200':
+          description: Success
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeServer
+      summary: mcp-context-003-msap
+      description: Kontextsensitive MCP-Tools für Lead-, Opportunity- und Angebotsprozesse in Dynamics 365 Sales.
+securityDefinitions:
+  oauth2-auth:
+    type: oauth2
+    flow: accessCode
+    tokenUrl: https://login.windows.net/common/oauth2/authorize
+    scopes:
+      api://8873f34d-ba3b-44e3-9499-ebd2b2bbf52f/access_as_user: api://8873f34d-ba3b-44e3-9499-ebd2b2bbf52f/access_as_user
+    authorizationUrl: https://login.microsoftonline.com/common/oauth2/authorize
+security:
+  - oauth2-auth:
+      - api://8873f34d-ba3b-44e3-9499-ebd2b2bbf52f/access_as_user

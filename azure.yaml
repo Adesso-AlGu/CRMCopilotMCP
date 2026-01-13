@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: copilot-mcp-webapp-dotnet
+metadata:
+  template: copilot-mcp-webapp-dotnet@0.0.1-beta
+services:
+  lead:
+    project: src/McpServer.Lead
+    language: dotnet
+    host: appservice
+  opportunity:
+    project: src/McpServer.Opportunity
+    language: dotnet
+    host: appservice
+  quote:
+    project: src/McpServer.Quote
+    language: dotnet
+    host: appservice

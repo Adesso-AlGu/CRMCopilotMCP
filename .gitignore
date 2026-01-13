@@ -1,0 +1,60 @@
+# Azure deployment outputs
+.azure/
+.azure
+
+# Build results
+bin/
+obj/
+packages/
+
+# Visual Studio
+*.suo
+*.user
+_ReSharper.*
+.vs/
+*.rsuser
+*.userosscache
+*.sln.docstates
+
+# Azure and sensitive configuration
+appsettings.Development.json
+appsettings.*.json
+!appsettings.json
+src/McpServer.Opportunity/appsettings.json
+src/McpServer.Lead/appsettings.json
+src/McpServer.Quote/appsettings.json
+*.parameters.json
+!*.parameters.template.json
+local.settings.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/

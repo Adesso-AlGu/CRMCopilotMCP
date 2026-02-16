@@ -11,6 +11,7 @@ public interface IDataverseService
     Task<WhoAmIResponse> WhoAmIAsync();
     Task<EntityCollection> QueryProductsAsync(string opportunityId);
     Task<Entity> QueryOpportunityAsync(string opportunityId);
+    Task<Guid> AddStakeholderAsync(string opportunityId, string contactName, string role, string description);
 }
 
 public class DataverseService : IDataverseService
@@ -224,6 +225,123 @@ public class DataverseService : IDataverseService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Fehler beim Abrufen von Opportunity {OpportunityId}", opportunityId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Fügt einen Stakeholder als Connection zur Opportunity hinzu
+    /// Erstellt zuerst einen Kontakt und verbindet diesen dann mit der Opportunity
+    /// </summary>
+    public async Task<Guid> AddStakeholderAsync(string opportunityId, string contactName, string role, string description)
+    {
+        try
+        {
+            _logger.LogInformation(
+                "Füge Stakeholder zur Opportunity hinzu: OpportunityId={OpportunityId}, Name={ContactName}, Role={Role}",
+                opportunityId, contactName, role
+            );
+
+            using var serviceClient = await GetServiceClientAsync();
+
+            // Namen aufteilen (Vorname Nachname)
+            var nameParts = contactName.Trim().Split(' ', 2);
+            var firstName = nameParts[0];
+            var lastName = nameParts.Length > 1 ? nameParts[1] : "";
+
+            // Zuerst prüfen, ob ein Kontakt mit diesem Namen bereits existiert
+            var contactQuery = new Microsoft.Xrm.Sdk.Query.QueryExpression("contact")
+            {
+                ColumnSet = new Microsoft.Xrm.Sdk.Query.ColumnSet("contactid", "fullname"),
+                Criteria = new Microsoft.Xrm.Sdk.Query.FilterExpression
+                {
+                    Conditions =
+                    {
+                        new Microsoft.Xrm.Sdk.Query.ConditionExpression(
+                            "firstname",
+                            Microsoft.Xrm.Sdk.Query.ConditionOperator.Equal,
+                            firstName
+                        ),
+                        new Microsoft.Xrm.Sdk.Query.ConditionExpression(
+                            "lastname",
+                            Microsoft.Xrm.Sdk.Query.ConditionOperator.Equal,
+                            lastName
+                        )
+                    }
+                },
+                TopCount = 1
+            };
+
+            var existingContacts = await serviceClient.RetrieveMultipleAsync(contactQuery);
+            Guid contactId;
+
+            if (existingContacts.Entities.Count > 0)
+            {
+                // Vorhandenen Kontakt verwenden
+                contactId = existingContacts.Entities[0].Id;
+                _logger.LogInformation("Vorhandener Kontakt gefunden: {ContactId}", contactId);
+            }
+            else
+            {
+                // Neuen Kontakt erstellen
+                var contact = new Entity("contact")
+                {
+                    ["firstname"] = firstName,
+                    ["lastname"] = lastName,
+                    ["jobtitle"] = role,
+                    ["description"] = description
+                };
+
+                contactId = await serviceClient.CreateAsync(contact);
+                _logger.LogInformation("Neuer Kontakt erstellt: {ContactId}", contactId);
+            }
+
+            // Connection-Role für Stakeholder suchen oder Standard-Rolle verwenden
+            var connectionRoleQuery = new Microsoft.Xrm.Sdk.Query.QueryExpression("connectionrole")
+            {
+                ColumnSet = new Microsoft.Xrm.Sdk.Query.ColumnSet("connectionroleid", "name"),
+                Criteria = new Microsoft.Xrm.Sdk.Query.FilterExpression
+                {
+                    Conditions =
+                    {
+                        new Microsoft.Xrm.Sdk.Query.ConditionExpression(
+                            "name",
+                            Microsoft.Xrm.Sdk.Query.ConditionOperator.Like,
+                            $"%{role}%"
+                        )
+                    }
+                },
+                TopCount = 1
+            };
+
+            var connectionRoles = await serviceClient.RetrieveMultipleAsync(connectionRoleQuery);
+
+            // Connection zwischen Opportunity und Kontakt erstellen
+            var connection = new Entity("connection")
+            {
+                ["record1id"] = new EntityReference("opportunity", Guid.Parse(opportunityId)),
+                ["record2id"] = new EntityReference("contact", contactId),
+                ["description"] = $"Stakeholder: {role} - {description}"
+            };
+
+            // Falls eine passende Connection Role gefunden wurde, diese verwenden
+            if (connectionRoles.Entities.Count > 0)
+            {
+                connection["record1roleid"] = new EntityReference("connectionrole", connectionRoles.Entities[0].Id);
+            }
+
+            var connectionId = await serviceClient.CreateAsync(connection);
+
+            _logger.LogInformation(
+                "Stakeholder erfolgreich hinzugefügt: ConnectionId={ConnectionId}, ContactId={ContactId}",
+                connectionId, contactId
+            );
+
+            return connectionId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Fehler beim Hinzufügen eines Stakeholders zur Opportunity {OpportunityId}", opportunityId);
             throw;
         }
     }
